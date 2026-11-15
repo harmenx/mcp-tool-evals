@@ -1,0 +1,77 @@
+tasks:
+  - id: dune-price
+    prompt: What is the price of the book titled Dune?
+    expect:
+      tools: [search_books]
+      forbid: [calculate]
+      arguments:
+        search_books:
+          query:
+            equals: Dune
+    verifier:
+      type: regex
+      pattern: '9\.99'
+
+  - id: neuromancer-author
+    prompt: Who wrote Neuromancer?
+    expect:
+      tools: [search_books]
+      arguments:
+        search_books:
+          query:
+            equals: Neuromancer
+    verifier:
+      type: regex
+      pattern: Gibson
+
+  - id: scifi-shelf
+    prompt: Which books are tagged sci-fi?
+    expect:
+      tools: [list_by_tag]
+      arguments:
+        list_by_tag:
+          tag:
+            equals: sci-fi
+    verifier:
+      type: regex
+      pattern: 'Dune[\s\S]*Neuromancer[\s\S]*Left Hand'
+
+  - id: lookup-dune
+    prompt: Look up book id dune and quote the author.
+    expect:
+      tools: [get_book]
+      arguments:
+        get_book:
+          id:
+            equals: dune
+    verifier:
+      type: regex
+      pattern: Herbert
+
+  - id: multiply
+    prompt: What is 15 multiplied by 4?
+    expect:
+      tools: [calculate]
+      arguments:
+        calculate:
+          op:
+            equals: mul
+          a:
+            equals: 15
+          b:
+            equals: 4
+    verifier:
+      type: exact
+      value: "60"
+
+  - id: dune-stock
+    prompt: Is the book titled Dune in stock, and what does it cost?
+    expect:
+      tools: [search_books]
+      arguments:
+        search_books:
+          query:
+            equals: Dune
+    verifier:
+      type: llm-judge
+      criteria: The answer must include "9.99" and "in stock".

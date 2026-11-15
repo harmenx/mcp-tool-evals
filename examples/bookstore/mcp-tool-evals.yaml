@@ -1,0 +1,30 @@
+# Eval for the bundled bookstore server.
+# Paths are relative to this file. Start the mock model, then:
+#   OPENAI_API_KEY=demo npm run demo
+# or point provider.baseUrl at a LiteLLM / OpenAI-compatible proxy.
+
+server:
+  transport: stdio
+  command: node
+  args: ["--import", "tsx", "server.ts"]
+
+provider:
+  baseUrl: ${OPENAI_BASE_URL:-http://127.0.0.1:8787/v1}
+  apiKeyEnv: OPENAI_API_KEY
+
+models:
+  - name: mock
+    model: mock-good
+
+tasks: tasks.yaml
+
+limits:
+  maxTurns: 4
+  timeoutMs: 30000
+
+judge:
+  model: mock-good
+
+output:
+  json: ../../results/bookstore.json
+  markdown: ../../results/summary.md

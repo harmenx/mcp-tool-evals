@@ -40,6 +40,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "demo": "tsx examples/demo.ts",
+    "benchmark": "tsx benchmark/run.ts",
     "mcp-tool-evals": "tsx src/cli.ts"
   },
   "dependencies": {

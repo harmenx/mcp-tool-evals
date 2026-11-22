@@ -2,5 +2,6 @@ node_modules/
 dist/
 coverage/
 results/
+mcp-tool-evals-reports/
 .env
 *.log

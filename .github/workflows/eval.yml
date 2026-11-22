@@ -1,0 +1,39 @@
+name: eval
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  bookstore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start the mock model
+        env:
+          PORT: "8787"
+        run: |
+          node --import tsx examples/mock-openai/server.ts > /tmp/mock-openai.log 2>&1 &
+          for _ in $(seq 1 50); do
+            if curl -sf -o /dev/null -X POST http://127.0.0.1:8787/v1/chat/completions \
+              -H 'content-type: application/json' \
+              -d '{"model":"mock-good","messages":[{"role":"user","content":"ping"}]}'; then
+              exit 0
+            fi
+            sleep 0.2
+          done
+          cat /tmp/mock-openai.log
+          exit 1
+      - uses: ./
+        with:
+          config: examples/bookstore/mcp-tool-evals.yaml
+          baseline: examples/bookstore/baseline.json
+          threshold: "0"
+        env:
+          OPENAI_BASE_URL: http://127.0.0.1:8787/v1
+          OPENAI_API_KEY: ci

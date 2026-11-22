@@ -1,0 +1,21 @@
+# mcp-server-fetch (uvx). Needs network egress.
+tasks:
+  - id: example-domain
+    prompt: Fetch https://example.com and quote the main heading.
+    expect:
+      tools: [fetch]
+      arguments:
+        fetch:
+          url:
+            equals: https://example.com
+    verifier:
+      type: regex
+      pattern: Example Domain
+
+  - id: example-link
+    prompt: Fetch https://example.com and tell me where the "More information" link points.
+    expect:
+      tools: [fetch]
+    verifier:
+      type: regex
+      pattern: iana\.org

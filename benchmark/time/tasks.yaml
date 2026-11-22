@@ -1,0 +1,29 @@
+# mcp-server-time. Timezone names must be exact IANA keys.
+tasks:
+  - id: london-now
+    prompt: What time is it in Europe/London right now?
+    expect:
+      tools: [get_current_time]
+      arguments:
+        get_current_time:
+          timezone:
+            equals: Europe/London
+    verifier:
+      type: regex
+      pattern: '\d{1,2}:\d{2}'
+
+  - id: london-to-new-york
+    prompt: Convert 15:00 in Europe/London to America/New_York.
+    expect:
+      tools: [convert_time]
+      arguments:
+        convert_time:
+          source_timezone:
+            equals: Europe/London
+          time:
+            equals: "15:00"
+          target_timezone:
+            equals: America/New_York
+    verifier:
+      type: regex
+      pattern: '10:00'

@@ -1,0 +1,21 @@
+# Launch line follows the upstream server README. Paths are relative to this file.
+server:
+  transport: stdio
+  command: uvx
+  args: ["mcp-server-fetch"]
+provider:
+  baseUrl: ${OPENAI_BASE_URL:-http://127.0.0.1:8787/v1}
+  apiKeyEnv: OPENAI_API_KEY
+
+models:
+  - name: mock
+    model: mock-good
+
+judge:
+  model: mock-good
+
+tasks: tasks.yaml
+
+limits:
+  maxTurns: 4
+  timeoutMs: 60000

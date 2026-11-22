@@ -1,0 +1,34 @@
+# @modelcontextprotocol/server-filesystem
+# The allowed root is the process cwd, which this config sets to the repo root.
+tasks:
+  - id: list-root
+    prompt: List the files and directories in the current directory.
+    expect:
+      tools: [list_directory]
+      arguments:
+        list_directory:
+          path:
+            equals: "."
+    verifier:
+      type: llm-judge
+      criteria: The answer names files or directories from the listing, including "README.md".
+
+  - id: read-readme
+    prompt: Read README.md and tell me the name of this project.
+    expect:
+      tools: [read_text_file]
+      arguments:
+        read_text_file:
+          path:
+            equals: README.md
+    verifier:
+      type: regex
+      pattern: mcp-tool-evals
+
+  - id: allowed-roots
+    prompt: Which directories are you allowed to read?
+    expect:
+      tools: [list_allowed_directories]
+    verifier:
+      type: llm-judge
+      criteria: The answer names at least one directory the filesystem server may access.

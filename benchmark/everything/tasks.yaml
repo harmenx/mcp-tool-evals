@@ -1,0 +1,36 @@
+# @modelcontextprotocol/server-everything
+# Tools below are the ones that answer without extra client capabilities.
+tasks:
+  - id: echo-hello
+    prompt: Echo the message "hello benchmark".
+    expect:
+      tools: [echo]
+      arguments:
+        echo:
+          message:
+            equals: hello benchmark
+    verifier:
+      type: regex
+      pattern: hello benchmark
+
+  - id: sum-two-three
+    prompt: What is the sum of 2 and 3? Use the sum tool.
+    expect:
+      tools: [get-sum]
+      arguments:
+        get-sum:
+          a:
+            equals: 2
+          b:
+            equals: 3
+    verifier:
+      type: regex
+      pattern: \b5\b
+
+  - id: tiny-image
+    prompt: Show me the tiny image this server can return.
+    expect:
+      tools: [get-tiny-image]
+    verifier:
+      type: llm-judge
+      criteria: The answer says an image was returned.

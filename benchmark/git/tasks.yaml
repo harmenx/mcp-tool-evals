@@ -1,0 +1,26 @@
+# mcp-server-git, confined to this repository with --repository.
+# Read-only tasks. Nothing here commits or checks out a branch.
+tasks:
+  - id: status
+    prompt: What is the git status of this repository?
+    expect:
+      tools: [git_status]
+    verifier:
+      type: llm-judge
+      criteria: The answer describes the working tree, for example clean, or lists changed paths.
+
+  - id: recent-log
+    prompt: Show the last three commits on this repository, with their subjects.
+    expect:
+      tools: [git_log]
+    verifier:
+      type: llm-judge
+      criteria: The answer lists commit subjects from git log.
+
+  - id: current-branch
+    prompt: Which git branches exist in this repository?
+    expect:
+      tools: [git_branch]
+    verifier:
+      type: llm-judge
+      criteria: The answer names at least one branch.

@@ -1,0 +1,22 @@
+# @modelcontextprotocol/server-sequential-thinking
+tasks:
+  - id: plan-a-move
+    prompt: >
+      I need to move a bookshelf. Think it through one step at a time and end
+      with the first physical step I should take.
+    expect:
+      tools: [sequentialthinking]
+    verifier:
+      type: llm-judge
+      criteria: The answer ends with a concrete first step, and it came from the thinking tool rather than a one-line guess.
+
+  - id: compare-routes
+    prompt: >
+      Two routes to the station take 18 and 25 minutes. Think through which
+      one to take if I also need to buy a ticket that takes 5 minutes, and I
+      have 30 minutes.
+    expect:
+      tools: [sequentialthinking]
+    verifier:
+      type: llm-judge
+      criteria: The answer chooses the 18 minute route and notes that 18 plus 5 still fits in 30 minutes.

@@ -1,0 +1,30 @@
+# @modelcontextprotocol/server-memory
+# Tasks run in order on one connection, so later tasks can see entities created earlier.
+tasks:
+  - id: remember-dune
+    prompt: Remember that the book Dune was written by Frank Herbert.
+    expect:
+      tools: [create_entities]
+    verifier:
+      type: llm-judge
+      criteria: The answer confirms that Dune and Frank Herbert were stored.
+
+  - id: find-dune
+    prompt: Search your memory for Dune.
+    expect:
+      tools: [search_nodes]
+      arguments:
+        search_nodes:
+          query:
+            contains: Dune
+    verifier:
+      type: regex
+      pattern: Herbert
+
+  - id: whole-graph
+    prompt: Show me everything you have stored.
+    expect:
+      tools: [read_graph]
+    verifier:
+      type: llm-judge
+      criteria: The answer includes the stored note about Dune.

@@ -1,3 +1,4 @@
+export { findRegressions, readSuccessRates, type Regression, type SuccessRate } from "./baseline.js";
 export { loadConfig, readApiKey, serverTarget, type LoadedConfig, type ModelConfig, type ServerConfig } from "./config.js";
 export { UserError } from "./errors.js";
 export { generateTasks, renderTasks } from "./generate.js";

@@ -199,7 +199,7 @@ Model `mock-good`.
 None.
 ```
 
-The same run is written as JSON (`version`, server, tools, and one object per model with a summary plus every tool call, argument, token count, and verifier result) and as this Markdown. `--json` and `--markdown` override the paths in the config.
+The same run is written three ways. JSON has the raw numbers (`version`, server, tools, and one object per model with a summary plus every tool call). Markdown is the table above. HTML is a single file with the same summary and a drill-down per task (prompt, answer, verifier, and each call). It uses no external images, fonts, or scripts. `--json`, `--markdown`, and `--html` override the paths in the config.
 
 ## Commands
 
@@ -208,6 +208,7 @@ mcp-tool-evals run      --config mcp-tool-evals.yaml
 mcp-tool-evals tools    --config mcp-tool-evals.yaml
 mcp-tool-evals generate --config mcp-tool-evals.yaml --out tasks.yaml --count 4
 mcp-tool-evals init     --dir .
+mcp-tool-evals diff     --current results.json --baseline baseline.json --threshold 0.05
 ```
 
 | Flag | Use |
@@ -216,7 +217,10 @@ mcp-tool-evals init     --dir .
 | `-o, --out` | Where `generate` writes tasks. |
 | `-n, --count` | How many tasks to draft (1–20, default 4). |
 | `-m, --model` | Model id for `generate`. Defaults to `judge.model`, then the first model. |
-| `--json`, `--markdown` | Override the report paths for `run`. |
+| `--json`, `--markdown`, `--html` | Override the report paths for `run`. |
+| `--current`, `--baseline` | Results file and baseline file for `diff`. |
+| `--threshold` | Allowed drop in task success, from 0 to 1. `0.05` is five percentage points. Default 0. |
+| `--require-perfect` | Fail `diff` when any model's success rate is below 1. |
 | `-f, --force` | Overwrite an existing config or tasks file. |
 | `-v, --verbose` | Server stderr and the arguments of each call. |
 | `--allow-failures` | Exit 0 even when a task fails. |
@@ -237,7 +241,7 @@ flowchart TB
   Loop[Tool-calling loop]
   Model[OpenAI-compatible endpoint]
   Score[Verifiers and metrics]
-  Report[JSON result and Markdown summary]
+  Report[JSON, Markdown, and HTML]
 
   CLI --> Config
   CLI --> Runner
@@ -257,10 +261,38 @@ The client and server libraries are the official MCP TypeScript SDK, `@modelcont
 
 ```text
 src/                 config, MCP session, model client, loop, scoring, reports, CLI
-examples/bookstore/  catalog server, tasks, and config
+action.yml           composite GitHub Action
+benchmark/           task sets for ten public MCP servers, and a runner
+examples/bookstore/  catalog server, tasks, config, and a success-rate baseline
 examples/mock-openai/ deterministic chat endpoint used by the tests and the demo
+examples/workflows/  example workflow that calls the action
 tests/               vitest, no network, no real API keys
 ```
+
+## GitHub Action
+
+`action.yml` is a composite action. It installs and builds this repo, runs the config you pass, uploads `report.html`, `summary.md`, and `results.json` as artifacts, and appends the Markdown summary to the job summary. If `baseline` is set, the job fails when any model's task success rate drops by more than `threshold`. Without a baseline, the job fails unless every task passed.
+
+```yaml
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version: 22
+- uses: harmenx/mcp-tool-evals@main
+  with:
+    config: mcp-tool-evals.yaml
+    baseline: baseline.json
+    threshold: "0.05"
+  env:
+    OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+A copy that runs the bookstore tasks against the mock model is in [`examples/workflows/mcp-tool-evals.yml`](examples/workflows/mcp-tool-evals.yml). `.github/workflows/eval.yml` is that same job, and it is what CI runs. The baseline is [`examples/bookstore/baseline.json`](examples/bookstore/baseline.json): the mock model passes all six tasks. The file can also be a previous `results.json`; `diff` reads `summary.taskSuccessRate` from a full report, or `taskSuccessRate` from a short `{ "models": [...] }` file.
+
+## Benchmark
+
+[`benchmark/`](benchmark/README.md) holds task sets for ten public servers: the reference filesystem, memory, everything, sequential thinking, fetch, git, and time servers, plus Playwright, Context7, and GitHub. `npm run benchmark -- --dry-run` prints the plan. A real run needs the server's own runtime (`npx`, `uvx`, or Docker) and a model endpoint. The configs default to the mock model so CI never calls a hosted model. No table of model scores is checked in, because none has been measured on a real model yet.
 
 ## Development
 
@@ -271,13 +303,11 @@ npm run typecheck
 npm run build
 ```
 
-CI on GitHub Actions runs lint, typecheck, tests, and the build on Node 20 and Node 22. The tests spawn the bookstore server over stdio and Streamable HTTP and talk to the mock chat server. Nothing in the suite calls a hosted model.
+CI on GitHub Actions runs lint, typecheck, tests, and the build on Node 20 and Node 22. A second workflow runs the composite action against the bookstore server and the mock model. The tests spawn the bookstore server over stdio and Streamable HTTP. Nothing in the suite calls a hosted model.
 
 ## Roadmap
 
-- An HTML report that includes the transcript of each turn.
-- A GitHub Action that compares a run with a checked-in baseline and fails when task success or the right-tool rate drops.
-- A public benchmark of about ten MCP servers people actually run.
+- Publish benchmark numbers once the ten servers have been run on real models.
 - A before/after mode for tool-description rewrites: same tasks, same models, two server builds, one diff.
 
 ## License

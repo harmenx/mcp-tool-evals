@@ -1,0 +1,17 @@
+# Read-only questions. Tool names follow github/github-mcp-server.
+tasks:
+  - id: find-mcp-repos
+    prompt: Search GitHub for repositories named mcp-tool-evals.
+    expect:
+      tools: [search_repositories]
+    verifier:
+      type: llm-judge
+      criteria: The answer lists repository search results, or says none matched.
+
+  - id: readme-of-servers
+    prompt: Read the README of modelcontextprotocol/servers at the repository root.
+    expect:
+      tools: [get_file_contents]
+    verifier:
+      type: llm-judge
+      criteria: The answer quotes or summarizes the README of modelcontextprotocol/servers.

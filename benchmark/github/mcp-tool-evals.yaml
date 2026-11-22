@@ -1,0 +1,25 @@
+# GitHub's official MCP server. Requires GITHUB_PERSONAL_ACCESS_TOKEN.
+# https://github.com/github/github-mcp-server
+server:
+  transport: stdio
+  command: docker
+  args: ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"]
+  env:
+    GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PERSONAL_ACCESS_TOKEN:-}
+
+provider:
+  baseUrl: ${OPENAI_BASE_URL:-http://127.0.0.1:8787/v1}
+  apiKeyEnv: OPENAI_API_KEY
+
+models:
+  - name: mock
+    model: mock-good
+
+judge:
+  model: mock-good
+
+tasks: tasks.yaml
+
+limits:
+  maxTurns: 4
+  timeoutMs: 60000

@@ -1,0 +1,23 @@
+# @playwright/mcp. The package downloads a browser on first use.
+# Launch line: npx -y @playwright/mcp@latest
+server:
+  transport: stdio
+  command: npx
+  args: ["-y", "@playwright/mcp@latest"]
+
+provider:
+  baseUrl: ${OPENAI_BASE_URL:-http://127.0.0.1:8787/v1}
+  apiKeyEnv: OPENAI_API_KEY
+
+models:
+  - name: mock
+    model: mock-good
+
+judge:
+  model: mock-good
+
+tasks: tasks.yaml
+
+limits:
+  maxTurns: 4
+  timeoutMs: 90000

@@ -1,0 +1,17 @@
+# Tool names follow @upstash/context7-mcp.
+tasks:
+  - id: resolve-react
+    prompt: Find the Context7 library id for React.
+    expect:
+      tools: [resolve-library-id]
+    verifier:
+      type: llm-judge
+      criteria: The answer includes a library id for React.
+
+  - id: react-docs
+    prompt: Look up the React documentation for useState and quote one sentence from it.
+    expect:
+      tools: [resolve-library-id, get-library-docs]
+    verifier:
+      type: llm-judge
+      criteria: The answer quotes documentation about the React useState hook.

@@ -1,0 +1,22 @@
+# @upstash/context7-mcp. Resolves a library id, then fetches docs for it.
+server:
+  transport: stdio
+  command: npx
+  args: ["-y", "@upstash/context7-mcp"]
+
+provider:
+  baseUrl: ${OPENAI_BASE_URL:-http://127.0.0.1:8787/v1}
+  apiKeyEnv: OPENAI_API_KEY
+
+models:
+  - name: mock
+    model: mock-good
+
+judge:
+  model: mock-good
+
+tasks: tasks.yaml
+
+limits:
+  maxTurns: 4
+  timeoutMs: 60000

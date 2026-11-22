@@ -1,0 +1,21 @@
+# Tool names follow @playwright/mcp: browser_navigate, browser_snapshot.
+tasks:
+  - id: open-example
+    prompt: Open https://example.com in the browser.
+    expect:
+      tools: [browser_navigate]
+      arguments:
+        browser_navigate:
+          url:
+            equals: https://example.com
+    verifier:
+      type: llm-judge
+      criteria: The answer says the page opened and mentions Example Domain.
+
+  - id: snapshot-example
+    prompt: Open https://example.com and describe what is on the page.
+    expect:
+      tools: [browser_navigate, browser_snapshot]
+    verifier:
+      type: regex
+      pattern: Example Domain

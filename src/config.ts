@@ -44,7 +44,7 @@ export interface LoadedConfig {
   tasksMissing: boolean;
   limits: { maxTurns: number; timeoutMs: number };
   judgeModel?: string;
-  output: { json?: string; markdown?: string };
+  output: { json?: string; markdown?: string; html?: string };
 }
 
 export async function loadConfig(file: string, env: NodeJS.ProcessEnv = process.env): Promise<LoadedConfig> {
@@ -204,15 +204,16 @@ function parseJudge(value: unknown, label: string): string | undefined {
   return value.model === undefined ? undefined : requiredString(value.model, `${label}.model`);
 }
 
-function parseOutput(value: unknown, configDir: string, label: string): { json?: string; markdown?: string } {
+function parseOutput(value: unknown, configDir: string, label: string): { json?: string; markdown?: string; html?: string } {
   if (value === undefined) return {};
   if (!isRecord(value)) throw new UserError(`${label} must be an object.`);
-  rejectUnknown(value, ["json", "markdown"], label);
-  const output: { json?: string; markdown?: string } = {};
+  rejectUnknown(value, ["json", "markdown", "html"], label);
+  const output: { json?: string; markdown?: string; html?: string } = {};
   if (value.json !== undefined) output.json = path.resolve(configDir, requiredString(value.json, `${label}.json`));
   if (value.markdown !== undefined) {
     output.markdown = path.resolve(configDir, requiredString(value.markdown, `${label}.markdown`));
   }
+  if (value.html !== undefined) output.html = path.resolve(configDir, requiredString(value.html, `${label}.html`));
   return output;
 }
 

@@ -19,6 +19,7 @@ interface Flags {
   dir?: string;
   json?: string;
   markdown?: string;
+  html?: string;
   force: boolean;
   verbose: boolean;
   allowFailures: boolean;
@@ -37,6 +38,7 @@ async function main(argv: string[]): Promise<number> {
       dir: { type: "string", short: "d" },
       json: { type: "string" },
       markdown: { type: "string" },
+      html: { type: "string" },
       force: { type: "boolean", short: "f", default: false },
       verbose: { type: "boolean", short: "v", default: false },
       "allow-failures": { type: "boolean", default: false },
@@ -51,6 +53,7 @@ async function main(argv: string[]): Promise<number> {
     dir: values.dir,
     json: values.json,
     markdown: values.markdown,
+    html: values.html,
     force: values.force,
     verbose: values.verbose,
     allowFailures: values["allow-failures"],
@@ -101,11 +104,12 @@ async function main(argv: string[]): Promise<number> {
     const config = await loadConfig(requiredConfig(flags));
     if (flags.json) config.output.json = path.resolve(flags.json);
     if (flags.markdown) config.output.markdown = path.resolve(flags.markdown);
+    if (flags.html) config.output.html = path.resolve(flags.html);
     const report = await runAndPrint(config, {
       verbose: flags.verbose,
       onLine: (line) => process.stderr.write(`${line}\n`),
     });
-    for (const file of [config.output.json, config.output.markdown]) {
+    for (const file of [config.output.json, config.output.markdown, config.output.html]) {
       if (file) process.stderr.write(`wrote ${file}\n`);
     }
     const failed = report.models.some((model) => model.error || model.summary.successes !== model.summary.tasks);
@@ -129,7 +133,7 @@ Usage:
   mcp-tool-evals init [--dir .]
 
 Commands:
-  run        Run every task on every model and write JSON plus a Markdown summary
+  run        Run every task on every model and write JSON, Markdown, and HTML reports
   tools      Connect and print the server's tools
   generate   Ask a model to draft tasks from the server's tool schemas
   init       Write a starter config in the current directory
@@ -142,6 +146,7 @@ Options:
   -d, --dir <dir>         Directory for init
       --json <file>       Override the JSON report path
       --markdown <file>   Override the Markdown report path
+      --html <file>       Override the HTML report path
   -f, --force             Overwrite an existing config or tasks file
   -v, --verbose           Print server logs and each tool call
       --allow-failures    Exit 0 even when a task fails

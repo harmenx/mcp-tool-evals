@@ -28,3 +28,4 @@ judge:
 output:
   json: ../../results/bookstore.json
   markdown: ../../results/summary.md
+  html: ../../results/report.html

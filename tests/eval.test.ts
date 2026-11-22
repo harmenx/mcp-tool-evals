@@ -9,6 +9,7 @@ const configPath = path.join(repoRoot, "examples/bookstore/mcp-tool-evals.yaml")
 describe("bookstore eval", () => {
   it("scores a correct model, a wrong-tool model, and a bad-arguments model", async () => {
     const config = await loadConfig(configPath, { ...process.env, OPENAI_API_KEY: "test" });
+    expect(config.output.html).toMatch(/report\.html$/);
     config.models = [
       { name: "good", model: "mock-good" },
       { name: "wrong", model: "mock-wrong-tool" },

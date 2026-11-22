@@ -100,8 +100,26 @@ describe("cli", () => {
       expect(result.code, result.stderr).toBe(0);
       const text = await readFile(path.join(dir, "mcp-tool-evals.yaml"), "utf8");
       expect(text).toContain("apiKeyEnv: OPENAI_API_KEY");
+      expect(text).toContain("html: report.html");
       const again = await runCli(["init", "-d", dir]);
       expect(again.code).toBe(2);
+    } finally {
+      await removeDir(dir);
+    }
+  });
+
+  it("fails diff when success drops past the threshold", async () => {
+    const dir = await tempDir();
+    try {
+      const current = path.join(dir, "current.json");
+      const baseline = path.join(dir, "baseline.json");
+      await writeFile(current, JSON.stringify({ models: [{ name: "mock", taskSuccessRate: 0.5 }] }));
+      await writeFile(baseline, JSON.stringify({ models: [{ name: "mock", taskSuccessRate: 1 }] }));
+      const regressed = await runCli(["diff", "--current", current, "--baseline", baseline, "--threshold", "0.05"]);
+      expect(regressed.code, regressed.stderr).toBe(1);
+      expect(regressed.stdout).toContain("fail");
+      const held = await runCli(["diff", "--current", current, "--baseline", baseline, "--threshold", "0.6"]);
+      expect(held.code, held.stderr).toBe(0);
     } finally {
       await removeDir(dir);
     }

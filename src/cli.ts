@@ -3,6 +3,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
+import { findRegressions, readSuccessRatesFile, renderDiff } from "./baseline.js";
 import { loadConfig, readApiKey } from "./config.js";
 import { UserError } from "./errors.js";
 import { generateTasks, readTasksFile, renderTasks } from "./generate.js";
@@ -20,6 +21,10 @@ interface Flags {
   json?: string;
   markdown?: string;
   html?: string;
+  current?: string;
+  baseline?: string;
+  threshold?: string;
+  requirePerfect: boolean;
   force: boolean;
   verbose: boolean;
   allowFailures: boolean;
@@ -39,6 +44,10 @@ async function main(argv: string[]): Promise<number> {
       json: { type: "string" },
       markdown: { type: "string" },
       html: { type: "string" },
+      current: { type: "string" },
+      baseline: { type: "string" },
+      threshold: { type: "string" },
+      "require-perfect": { type: "boolean", default: false },
       force: { type: "boolean", short: "f", default: false },
       verbose: { type: "boolean", short: "v", default: false },
       "allow-failures": { type: "boolean", default: false },
@@ -54,6 +63,10 @@ async function main(argv: string[]): Promise<number> {
     json: values.json,
     markdown: values.markdown,
     html: values.html,
+    current: values.current,
+    baseline: values.baseline,
+    threshold: values.threshold,
+    requirePerfect: values["require-perfect"],
     force: values.force,
     verbose: values.verbose,
     allowFailures: values["allow-failures"],
@@ -100,6 +113,27 @@ async function main(argv: string[]): Promise<number> {
     process.stdout.write(`Wrote ${tasks.length} tasks to ${destination}\n`);
     return 0;
   }
+  if (command === "diff") {
+    if (!flags.current) throw new UserError("Pass --current <results.json>.");
+    if (!flags.baseline && !flags.requirePerfect) throw new UserError("Pass --baseline <file> or --require-perfect.");
+    const current = await readSuccessRatesFile(path.resolve(flags.current));
+    let failed = false;
+    if (flags.baseline) {
+      const threshold = flags.threshold === undefined ? 0 : Number(flags.threshold);
+      if (!Number.isFinite(threshold)) throw new UserError("--threshold must be a number from 0 to 1.");
+      const previous = await readSuccessRatesFile(path.resolve(flags.baseline));
+      process.stdout.write(renderDiff(current, previous, threshold));
+      failed = findRegressions(current, previous, threshold).length > 0;
+    }
+    if (flags.requirePerfect) {
+      const missed = current.filter((model) => model.taskSuccessRate < 1);
+      if (missed.length > 0) {
+        process.stdout.write(`Not every task passed: ${missed.map((model) => model.name).join(", ")}.\n`);
+        failed = true;
+      }
+    }
+    return failed ? 1 : 0;
+  }
   if (command === "run") {
     const config = await loadConfig(requiredConfig(flags));
     if (flags.json) config.output.json = path.resolve(flags.json);
@@ -131,12 +165,14 @@ Usage:
   mcp-tool-evals tools --config mcp-tool-evals.yaml
   mcp-tool-evals generate --config mcp-tool-evals.yaml [--out tasks.yaml] [--count 4]
   mcp-tool-evals init [--dir .]
+  mcp-tool-evals diff --current results.json --baseline baseline.json [--threshold 0.05]
 
 Commands:
   run        Run every task on every model and write JSON, Markdown, and HTML reports
   tools      Connect and print the server's tools
   generate   Ask a model to draft tasks from the server's tool schemas
   init       Write a starter config in the current directory
+  diff       Fail when task success drops past a baseline threshold
 
 Options:
   -c, --config <file>     Config file (required except for init)
@@ -147,6 +183,10 @@ Options:
       --json <file>       Override the JSON report path
       --markdown <file>   Override the Markdown report path
       --html <file>       Override the HTML report path
+      --current <file>    Results JSON for diff
+      --baseline <file>   Baseline JSON for diff (full report or {models:[{name, taskSuccessRate}]})
+      --threshold <n>     Allowed drop in task success, from 0 to 1 (default 0)
+      --require-perfect   Also fail when any model's success rate is below 1
   -f, --force             Overwrite an existing config or tasks file
   -v, --verbose           Print server logs and each tool call
       --allow-failures    Exit 0 even when a task fails

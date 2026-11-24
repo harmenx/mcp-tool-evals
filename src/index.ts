@@ -3,6 +3,7 @@ export { UserError } from "./errors.js";
 export { generateTasks, renderTasks } from "./generate.js";
 export { connectServer, type ListedTool, type McpSession } from "./mcp.js";
 export { createOpenAIClient, parseCompletion, type ModelClient } from "./model.js";
+export { renderHtml } from "./html.js";
 export { renderMarkdown } from "./report.js";
 export { runEval, type RunOptions } from "./runner.js";
 export type { EvalTask } from "./tasks.js";

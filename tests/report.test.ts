@@ -1,5 +1,8 @@
+import { mkdtemp, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatCost, formatDuration, renderMarkdown } from "../src/report.js";
+import { formatCost, formatDuration, renderMarkdown, writeReport } from "../src/report.js";
 import type { EvalReport } from "../src/types.js";
 
 const report: EvalReport = {
@@ -69,6 +72,16 @@ describe("renderMarkdown", () => {
     expect(markdown).toContain("| Cost | — |");
     expect(markdown).toContain("### Failures");
     expect(markdown).toContain("None.");
+  });
+
+  it("writes the HTML file beside the other reports", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "mcp-html-"));
+    const html = path.join(dir, "report.html");
+    const written = await writeReport(report, { html });
+    expect(written).toEqual([html]);
+    const text = await readFile(html, "utf8");
+    expect(text).toContain("<!DOCTYPE html>");
+    expect(text).toContain("dune-price");
   });
 
   it("formats duration and cost", () => {

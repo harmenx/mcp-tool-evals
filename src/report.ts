@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { renderHtml } from "./html.js";
 import type { EvalReport, ModelReport, TaskResult } from "./types.js";
 
 export function renderMarkdown(report: EvalReport): string {
@@ -27,7 +28,10 @@ export function renderMarkdown(report: EvalReport): string {
   return lines.join("\n").replace(/\n+$/, "\n");
 }
 
-export async function writeReport(report: EvalReport, output: { json?: string; markdown?: string }): Promise<string[]> {
+export async function writeReport(
+  report: EvalReport,
+  output: { json?: string; markdown?: string; html?: string },
+): Promise<string[]> {
   const written: string[] = [];
   if (output.json) {
     await writeText(output.json, `${JSON.stringify(report, null, 2)}\n`);
@@ -36,6 +40,10 @@ export async function writeReport(report: EvalReport, output: { json?: string; m
   if (output.markdown) {
     await writeText(output.markdown, renderMarkdown(report));
     written.push(output.markdown);
+  }
+  if (output.html) {
+    await writeText(output.html, renderHtml(report));
+    written.push(output.html);
   }
   return written;
 }

@@ -41,6 +41,7 @@ limits:
 output:
   json: results.json
   markdown: summary.md
+  html: report.html
 `;
 
 export async function scaffoldConfig(dir: string, force: boolean): Promise<string> {

@@ -1,0 +1,77 @@
+name: MCP tool evals
+description: Run mcp-tool-evals, upload the HTML and Markdown reports, and fail if task success drops past a baseline.
+author: Harmen Dark
+
+inputs:
+  config:
+    description: Path to mcp-tool-evals.yaml, relative to the workspace.
+    required: true
+  baseline:
+    description: Optional baseline JSON. A full results file, or {"models":[{"name","taskSuccessRate"}]}.
+    required: false
+    default: ""
+  threshold:
+    description: Fail when task success drops by more than this fraction. 0.05 is five percentage points.
+    required: false
+    default: "0"
+  report-dir:
+    description: Directory for results.json, summary.md, and report.html.
+    required: false
+    default: mcp-tool-evals-reports
+
+runs:
+  using: composite
+  steps:
+    - name: Install mcp-tool-evals
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci
+
+    - name: Build mcp-tool-evals
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm run build
+
+    - name: Run evals
+      shell: bash
+      run: |
+        mkdir -p "${{ inputs.report-dir }}"
+        node "${{ github.action_path }}/dist/cli.js" run \
+          --config "${{ inputs.config }}" \
+          --json "${{ inputs.report-dir }}/results.json" \
+          --markdown "${{ inputs.report-dir }}/summary.md" \
+          --html "${{ inputs.report-dir }}/report.html" \
+          --allow-failures
+
+    - name: Publish the job summary
+      shell: bash
+      run: |
+        {
+          echo "## mcp-tool-evals"
+          echo
+          cat "${{ inputs.report-dir }}/summary.md"
+          echo
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: mcp-tool-evals-report
+        path: |
+          ${{ inputs.report-dir }}/report.html
+          ${{ inputs.report-dir }}/summary.md
+          ${{ inputs.report-dir }}/results.json
+        if-no-files-found: warn
+
+    - name: Compare with the baseline
+      shell: bash
+      run: |
+        set -o pipefail
+        args=(diff --current "${{ inputs.report-dir }}/results.json")
+        if [ -n "${{ inputs.baseline }}" ]; then
+          args+=(--baseline "${{ inputs.baseline }}" --threshold "${{ inputs.threshold }}")
+        else
+          args+=(--require-perfect)
+        fi
+        node "${{ github.action_path }}/dist/cli.js" "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,8 @@
+{
+  "models": [
+    {
+      "name": "mock",
+      "taskSuccessRate": 1
+    }
+  ]
+}
